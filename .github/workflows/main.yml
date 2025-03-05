@@ -1,0 +1,27 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+
+
+jobs:
+  build:
+    name: Build and analyze
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Fetch SonarQube Issues
+      run: |
+        curl -u sqp_19ccdd7a2b459e8769a18fb76aaada6c69fa971c: \
+        "http://13.201.109.77:9000/api/issues/search?componentKeys=test1&types=BUG,VULNERABILITY,CODE_SMELL" \
+        -o sonarqube_issues.json
+
+    - name: Upload SonarQube Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: sonarqube-report
+        path: sonarqube_issues.json
+
+   
