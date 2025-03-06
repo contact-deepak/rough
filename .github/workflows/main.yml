@@ -38,15 +38,23 @@ jobs:
         script: |
           cd /opt/sonarqube-25.3.0.104237/bin/linux-x86-64
           ./sonar.sh start        
+          sleep 10  # Wait for SonarQube to fully start
 
-    - name: Build and analyze
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-    - uses: SonarSource/sonarqube-scan-action@v4
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: ${{ secrets.EC2_PUBLIC_IP }}:9000   
+    - name: Install Sonar Scanner
+      run: |
+        wget -O sonarscanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-5.0.1.3006-linux.zip
+        unzip sonarscanner.zip
+        mv sonar-scanner-5.0.1.3006-linux sonar-scanner
+        echo "$(pwd)/sonar-scanner/bin" >> $GITHUB_PATH
+
+    - name: Build and Analyze with SonarQube
+      run: |
+        sonar-scanner \
+          -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
+          -Dsonar.sources=. \
+          -Dsonar.host.url=http://${{ secrets.EC2_PUBLIC_IP }}:9000 \
+          -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+          -Dsonar.qualitygate.wait=true
 
     - name: Fetch SonarQube Issues
       run: |
@@ -58,4 +66,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: sonarqube-report
-        path: sonarqube_issues.json                
+        path: sonarqube_issues.json
