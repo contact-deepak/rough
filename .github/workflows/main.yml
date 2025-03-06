@@ -17,7 +17,23 @@ jobs:
       with:
         ref: ${{ github.event.pull_request.head.ref }} # Checkout PR branch
 
+    - name: SonarQube Scan
+      uses: SonarSource/sonarqube-scan-action@v4
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: http://13.51.162.128:9000    
+
+    - name: Check SonarQube Quality Gate
+      run: |
+        STATUS=$(curl -s -u ${{ secrets.SONAR_TOKEN }}: "http://13.51.162.128:9000/api/qualitygates/project_status?projectKey=PR" | jq -r .projectStatus.status)
+        echo "SonarQube Status: $STATUS"
+        if [[ "$STATUS" != "OK" ]]; then
+          echo "SonarQube check failed ❌"
+          exit 1
+        fi        
+
     - name: Approve PR if SonarQube Passes ✅
+      if: success()
       uses: hmarr/auto-approve-action@v3
       with:
         github-token: ${{ secrets.TOKEN }}
