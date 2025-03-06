@@ -13,20 +13,20 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Get Public IP
-      id: get-ip
-      run: echo "RUNNER_IP=$(curl -s ifconfig.me)" >> $GITHUB_ENV
+#    - name: Get Public IP
+#      id: get-ip
+#      run: echo "RUNNER_IP=$(curl -s ifconfig.me)" >> $GITHUB_ENV
 
-    - name: Configure AWS CLI & Update Security Group
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_REGION: eu-north-1
-      run: |
-        aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-        aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-        aws configure set default.region $AWS_REGION
-        aws ec2 authorize-security-group-ingress --group-id ${{ secrets.AWS_SECURITY_GROUP_ID }} --protocol tcp --port 9000 --cidr "${{ env.RUNNER_IP }}/32"
+#    - name: Configure AWS CLI & Update Security Group
+#      env:
+#        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#        AWS_REGION: eu-north-1
+#      run: |
+#        aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+#        aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+#        aws configure set default.region $AWS_REGION
+#        aws ec2 authorize-security-group-ingress --group-id ${{ secrets.AWS_SECURITY_GROUP_ID }} --protocol tcp --port 9000 --cidr "${{ env.RUNNER_IP }}/32"
 
     - name: Connect to EC2 & Start SonarQube
       uses: appleboy/ssh-action@v0.1.5
@@ -34,7 +34,7 @@ jobs:
         host: ${{ secrets.EC2_PUBLIC_IP }}
         username: ec2-user
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: 22
+        port: 9000
         script: |
           cd /opt/sonarqube-25.3.0.104237/bin/linux-x86-64
           ./sonar.sh start        
