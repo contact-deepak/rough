@@ -1,8 +1,11 @@
 name: PR SonarQube Analysis
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened] # Runs on PR open/update
+  pull_request_target:  # ✅ Use this instead of 'pull_request'
+
+permissions:
+  pull-requests: write  # ✅ Ensure write access for PR approvals
+  contents: read
 
 jobs:
   sonar_analysis:
