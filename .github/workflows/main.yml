@@ -15,7 +15,6 @@ jobs:
         ref: ${{ github.event.pull_request.head.ref }} # Checkout PR branch
 
     - name: Approve PR if SonarQube Passes ✅
-      if: success()
       uses: hmarr/auto-approve-action@v3
       with:
         github-token: ${{ secrets.TOKEN }}
