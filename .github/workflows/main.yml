@@ -36,7 +36,7 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: 22
         script: |
-          cd /opt/sonarqube-25.3.0.104237/bin/linux-x86-64
+          cd /opt/sonarqube-10.6.0.92116/bin/linux-x86-64
           ./sonar.sh start        
           sleep 10  # Wait for SonarQube to fully start
 
