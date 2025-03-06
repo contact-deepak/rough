@@ -1,27 +1,61 @@
-name: Build
+name: SonarQube Analysis
 
 on:
   push:
     branches:
-      - main
-
+      - main  
 
 jobs:
-  build:
-    name: Build and analyze
+  sonar_scan:
     runs-on: ubuntu-latest
     
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Get Public IP
+      id: get-ip
+      run: echo "RUNNER_IP=$(curl -s ifconfig.me)" >> $GITHUB_ENV
+
+    - name: Configure AWS CLI & Update Security Group
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_REGION: eu-north-1
+      run: |
+        aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+        aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+        aws configure set default.region $AWS_REGION
+        aws ec2 authorize-security-group-ingress --group-id ${{ secrets.AWS_SECURITY_GROUP_ID }} --protocol tcp --port 9000 --cidr "${{ env.RUNNER_IP }}/32"
+
+    - name: Connect to EC2 & Start SonarQube
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.EC2_PUBLIC_IP }}
+        username: sonar
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
+        script: |
+          cd /opt/sonarqube-25.3.0.104237/bin/linux-x86-64
+          ./sonar.sh start        
+
+    - name: Build and analyze
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+    - uses: SonarSource/sonarqube-scan-action@v4
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ secrets.EC2_PUBLIC_IP }}:9000   
+
     - name: Fetch SonarQube Issues
       run: |
-        curl -u sqp_19ccdd7a2b459e8769a18fb76aaada6c69fa971c: \
-        "http://13.201.109.77:9000/api/issues/search?componentKeys=test1&types=BUG,VULNERABILITY,CODE_SMELL" \
+        curl -u ${{ secrets.SONAR_TOKEN }}: \
+        "http://${{ secrets.EC2_PUBLIC_IP }}:9000/api/issues/search?componentKeys=${{ secrets.SONAR_PROJECT_KEY }}&types=BUG,VULNERABILITY,CODE_SMELL" \
         -o sonarqube_issues.json
 
     - name: Upload SonarQube Report
       uses: actions/upload-artifact@v4
       with:
         name: sonarqube-report
-        path: sonarqube_issues.json
-
-   
+        path: sonarqube_issues.json                
